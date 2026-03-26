@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Handbook | Project Restart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* 도트(픽셀) 폰트: 네오둥근모 로드 */
+        @font-face {
+            font-family: 'NeoDunggeunmo';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.3/NeoDunggeunmo.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-dark: #007780;
+            --glitch-red: #ff003c;
+            --bg-dark: #050608;
+            --panel-bg: rgba(15, 20, 25, 0.85);
+            --border-color: #334455;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #000;
+            /* 전체 기본 폰트를 도트 폰트로 변경 */
+            font-family: 'NeoDunggeunmo', sans-serif;
+            color: #fff;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            letter-spacing: 0.5px; /* 도트 폰트 가독성을 위한 자간 약간 벌림 */
+        }
+
+        /* --- 로딩 화면 --- */
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-dark);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.5s ease;
+            background-image: radial-gradient(circle at center, rgba(0,243,255,0.05) 0%, transparent 60%);
+        }
+
+        .loading-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem; font-weight: 700;
+            color: var(--neon-blue);
+            letter-spacing: 3px; margin-bottom: 25px;
+            text-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
+            text-align: center;
+        }
+
+        .progress-container {
+            width: 80%; max-width: 300px; height: 6px; background: #222; border-radius: 2px;
+            overflow: hidden; position: relative;
+        }
+
+        .progress-bar {
+            width: 0%; height: 100%; background: var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue);
+            animation: loadAnim 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes loadAnim { 0% { width: 0%; } 40% { width: 45%; } 80% { width: 85%; } 100% { width: 100%; } }
+
+        /* --- 디바이스 메인 프레임 --- */
+        #device-frame {
+            width: 100%; max-width: 950px;
+            height: 100vh; max-height: 750px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.1), inset 0 0 20px rgba(0,0,0,0.8);
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        #status-bar {
+            height: 40px; background: linear-gradient(90deg, #0a0e14, #141a22);
+            border-bottom: 1px solid var(--neon-dark);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem; color: var(--neon-blue);
+            box-sizing: border-box; flex-shrink: 0;
+        }
+        .hud-text { display: flex; gap: 15px; }
+
+        #nav-bar {
+            display: flex; height: 50px; background-color: rgba(10, 15, 20, 0.8);
+            border-bottom: 2px solid var(--neon-dark); flex-shrink: 0;
+        }
+        .nav-btn {
+            flex: 1; background: none; border: none;
+            color: #666; font-family: 'Orbitron', sans-serif;
+            font-weight: 700; font-size: 1rem; letter-spacing: 1px;
+            cursor: pointer; transition: 0.3s;
+            border-right: 1px solid #222;
+        }
+        .nav-btn:last-child { border-right: none; }
+        .nav-btn.active {
+            color: var(--neon-blue); background: rgba(0, 243, 255, 0.05);
+            text-shadow: 0 0 8px var(--neon-blue);
+            border-bottom: 2px solid var(--neon-blue);
+        }
+
+        #main-content {
+            display: flex; flex: 1; overflow: hidden; position: relative;
+        }
+        .tab-content {
+            width: 100%; height: 100%; overflow-y: auto;
+            padding: 25px; box-sizing: border-box; display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif; font-size: 1.5rem; color: #fff;
+            border-bottom: 2px solid var(--neon-blue);
+            padding-bottom: 5px; margin-top: 0; margin-bottom: 20px;
+            display: inline-block; text-shadow: 0 0 10px rgba(0,243,255,0.5);
+        }
+
+        /* 홈 탭 */
+        .promo-gif-wrap { text-align: center; margin-bottom: 20px; }
+        .promo-gif {
+            max-width: 100%; height: auto;
+            border: 1px solid var(--border-color); border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        .school-promo-text { text-align: center; }
+        .school-promo-text h2 { color: #fff; font-size: 1.8rem; margin-bottom: 10px; word-break: keep-all; }
+        .school-promo-text p { color: #ccc; line-height: 1.6; font-size: 1.1rem; margin-bottom: 10px; word-break: keep-all; }
+        .school-promo-text .creepy-text { color: var(--glitch-red); font-size: 0.9rem; opacity: 0.8; margin-top: 20px; word-break: keep-all; }
+
+        .enter-btn-wrap { text-align: center; margin-top: 30px; margin-bottom: 20px; }
+        .hyperlink-btn {
+            display: inline-block; padding: 15px 30px;
+            background: rgba(0, 243, 255, 0.1); border: 2px solid var(--neon-blue);
+            color: var(--neon-blue); font-family: 'NeoDunggeunmo', sans-serif;
+            font-size: 1.3rem; text-decoration: none;
+            border-radius: 5px; transition: 0.3s; text-align: center;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); letter-spacing: 1px;
+            word-break: keep-all;
+        }
+        .hyperlink-btn:hover {
+            background: var(--neon-blue); color: #000;
+            box-shadow: 0 0 25px var(--neon-blue); transform: translateY(-3px);
+        }
+
+        /* 세계관 탭 */
+        .info-layout { display: flex; gap: 20px; margin-bottom: 30px; align-items: flex-start; }
+        .info-layout:last-child { margin-bottom: 0; }
+
+        .img-wrap {
+            width: 300px; flex-shrink: 0; text-align: center;
+        }
+        .world-img {
+            max-width: 100%; height: auto;
+            border: 1px solid var(--neon-dark); border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,243,255,0.1);
+        }
+
+        .text-content { flex: 1; display: flex; flex-direction: column; justify-content: center;}
+        .text-content h3 { color: var(--neon-blue); margin-top: 0; font-size: 1.4rem; border-bottom: 1px dashed #333; padding-bottom: 10px;}
+        .text-content p { color: #ccc; line-height: 1.6; font-size: 1.1rem; margin-bottom: 10px; word-break: keep-all; }
+
+        /* 데이터베이스 탭 */
+        .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .folder-wrap { position: relative; margin-top: 15px; cursor: pointer; transition: 0.3s; }
+        .folder-tab {
+            position: absolute; top: -18px; left: 0;
+            background: #1a2028; border: 1px solid var(--border-color);
+            border-bottom: none; border-radius: 5px 15px 0 0;
+            padding: 3px 12px; font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem; color: #888; transition: 0.3s; z-index: 2;
+        }
+        .folder-body {
+            background: linear-gradient(135deg, #161c22 0%, #0d1116 100%);
+            border: 1px solid var(--border-color); border-radius: 0 10px 10px 10px;
+            padding: 12px; display: flex; align-items: center;
+            position: relative; z-index: 1; transition: 0.3s;
+        }
+        .folder-wrap:hover .folder-tab { background: var(--neon-dark); color: #fff; border-color: var(--neon-blue); }
+        .folder-wrap:hover .folder-body { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0,243,255,0.2); transform: translateY(-3px); }
+
+        .face-thumb {
+            width: 45px; height: 45px; background: #222; border: 1px solid #444;
+            border-radius: 5px; margin-right: 12px; display: flex; justify-content: center; align-items: center; 
+        }
+        .char-name { font-size: 1.2rem; color: #fff; }
+        .char-status { font-size: 0.8rem; color: var(--neon-blue); font-family: 'Orbitron', sans-serif; margin-top: 3px; }
+
+        /* 모달 */
+        #detail-modal {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 6, 8, 0.95); z-index: 100;
+        }
+        .modal-header {
+            height: 40px; background: var(--neon-dark); display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; font-family: 'Orbitron', sans-serif; color: #fff; font-weight: bold; font-size: 0.8rem;
+        }
+        .close-btn { cursor: pointer; font-size: 1.5rem; }
+        .close-btn:hover { color: var(--glitch-red); }
+
+        .modal-content { display: flex; height: calc(100% - 40px); overflow-y: auto; }
+
+        .modal-info { width: 50%; padding: 30px; box-sizing: border-box; border-right: 1px solid var(--border-color); overflow-y: auto; }
+        .detail-name { font-size: 2.5rem; color: #fff; margin: 0 0 5px 0; letter-spacing: 2px;}
+        .detail-subtitle { font-family: 'Orbitron', sans-serif; color: var(--neon-blue); font-size: 1rem; margin-bottom: 20px; }
+
+        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .info-table td { padding: 10px 5px; border-bottom: 1px solid #333; font-size: 1.1rem; }
+        .info-label { width: 80px; color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 0.9rem; }
+        .info-val { color: #ddd; word-break: keep-all;}
+
+        .info-box { background: rgba(0,0,0,0.5); border: 1px solid #333; padding: 15px; border-radius: 5px; margin-top: 10px;}
+        .info-box-title { font-size: 0.9rem; color: #888; margin-bottom: 8px; font-family: 'Orbitron', sans-serif;}
+        .info-desc { font-size: 1.05rem; line-height: 1.6; color: #ccc; word-break: keep-all; }
+
+        .modal-sprite {
+            width: 50%; position: relative; display: flex; justify-content: center; align-items: flex-end;
+            background: radial-gradient(circle at bottom, rgba(0, 243, 255, 0.1) 0%, transparent 60%);
+        }
+        .sprite-placeholder {
+            width: 90%; height: 90%; border: none;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
+
+        /* 모바일 최적화 */
+        @media screen and (max-width: 768px) {
+            #device-frame { height: 100vh; max-height: none; border-radius: 0; border: none; }
+            .hud-text { font-size: 0.65rem; gap: 8px; }
+            .nav-btn { font-size: 0.85rem; padding: 0; }
+            .tab-content { padding: 15px; }
+
+            .info-layout { flex-direction: column; gap: 15px; align-items: center;}
+            .img-wrap { width: 100%; }
+            .world-img { max-width: 100%; }
+            .school-promo-text h2 { font-size: 1.5rem; }
+
+            .folder-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .folder-body { flex-direction: column; text-align: center; padding: 15px 10px; }
+            .face-thumb { margin-right: 0; margin-bottom: 10px; width: 50px; height: 50px; }
+
+            .modal-content { flex-direction: column; overflow-y: auto; display: block; }
+            .modal-sprite { width: 100%; height: 280px; border-bottom: 1px solid var(--border-color); }
+            .modal-info { width: 100%; border-right: none; padding: 20px 15px; overflow-y: visible; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="loading-text">Project Restart<br>loading...</div>
+        <div class="progress-container"><div class="progress-bar"></div></div>
+    </div>
+
+    <div id="device-frame">
+
+        <div id="status-bar">
+            <div class="hud-text"><span>E-HANDBOOK</span><span style="color:#888;">// VER.2.0</span></div>
+            <div class="hud-text"><span>SIGNAL: STABLE</span><span>100% 🔋</span></div>
+        </div>
+
+        <div id="nav-bar">
+            <button class="nav-btn active" onclick="openTab('tab-home')">HOME</button>
+            <button class="nav-btn" onclick="openTab('tab-world')">WORLD</button>
+            <button class="nav-btn" onclick="openTab('tab-chars')">DATA</button>
+        </div>
+
+        <div id="main-content">
+
+            <div id="tab-home" class="tab-content active">
+                <div class="promo-gif-wrap">
+                    <img src="https://i.imgur.com/5e7h6R5.gif" class="promo-gif" alt="Promo GIF">
+                </div>
+
+                <div class="school-promo-text">
+                    <h2>당신의 찬란한 미래를 약속하는 곳.</h2>
+                    <p>리스타트 아카데미에 오신 것을 진심으로 환영합니다.<br>본교는 최첨단 가상현실 시스템을 도입하여 학생 여러분의 '새로운 시작'을 돕습니다.</p>
+                    <p>외부의 모든 위험과 스트레스로부터 완벽하게 차단된 기숙사 시설과 최고의 협동심을 기를 수 있는 특별한 교과 과정을 경험해 보십시오.</p>
+                    <div class="creepy-text">※ 시스템 접속 후에는 임의로 자퇴하실 수 없으니 신중히 지원 바랍니다.</div>
+                </div>
+
+                <div class="enter-btn-wrap">
+                    <a href="https://share.crack.wrtn.ai/6lhuwqm" class="hyperlink-btn" target="_blank">[ 아카데미 입학서 제출하기 ]</a>
+                </div>
+            </div>
+
+            <div id="tab-world" class="tab-content">
+                <h2 class="section-title">SYSTEM INFO</h2>
+
+                <div class="info-layout">
+                    <div class="img-wrap">
+                        <img src="https://i.imgur.com/TuMA94B.png" class="world-img" alt="School Image">
+                    </div>
+                    <div class="text-content">
+                        <h3>완벽하게 통제된 가상현실 교실</h3>
+                        <p>이곳은 창문도, 출구도 존재하지 않는 '리스타트 아카데미'입니다. 여러분은 모두 원인을 알 수 없는 이유로 이곳에 갇혔습니다.</p>
+                        <p>평범해 보이는 교실과 복도, 기숙사. 하지만 일과 시간이 되면 이 평화로운 공간은 목숨을 건 잔혹한 데스게임의 무대로 변모합니다. 살기 위해선 친구와 협력하고, 살아남기 위해선 끊임없이 의심해야 합니다.</p>
+                    </div>
+                </div>
+
+                <div class="info-layout">
+                    <div class="img-wrap">
+                        <img src="https://i.imgur.com/W9gJL7z.png" class="world-img" alt="Miso Image">
+                    </div>
+                    <div class="text-content">
+                        <h3>게임 마스터 : 학생회장 '미소'</h3>
+                        <p>기괴한 스마일 가면을 쓴 시스템의 관리자. 쾌활하고 상냥한 목소리로 타인의 소멸 앞에서도 해맑게 웃는 잔혹함을 지녔습니다. 미소에게는 어떠한 물리적 공격도 통하지 않습니다.</p>
+                        <p>규칙을 위반하거나 게임에서 탈락한 자는 그녀의 손가락 튕김 한 번에 '소멸' 처리되어 데이터의 먼지로 사라집니다. 참가자들의 목적은 단 하나. 7일간 살아남아 원래의 세계로 다시 '리스타트' 하는 것입니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-chars" class="tab-content">
+                <h2 class="section-title">DATABASE</h2>
+                <div class="folder-grid" id="char-grid">
+                    </div>
+            </div>
+
+        </div>
+
+        <div id="detail-modal">
+            <div class="modal-header">
+                <span>// DATA_FILE_OPEN</span>
+                <span class="close-btn" onclick="closeDetail()">×</span>
+            </div>
+
+            <div class="modal-content">
+                <div class="modal-sprite">
+                    <div class="sprite-placeholder" id="dt-sprite"></div>
+                </div>
+
+                <div class="modal-info">
+                    <h1 class="detail-name" id="dt-name">이름</h1>
+                    <div class="detail-subtitle">STUDENT DATA</div>
+
+                    <table class="info-table">
+                        <tr><td class="info-label">AGE</td><td class="info-val" id="dt-age">18세</td></tr>
+                        <tr><td class="info-label">HEIGHT</td><td class="info-val" id="dt-height">160cm</td></tr>
+                        <tr><td class="info-label">MBTI</td><td class="info-val" id="dt-mbti">XXXX</td></tr>
+                        <tr><td class="info-label">PERSONALITY</td><td class="info-val" id="dt-personality">성격 요약</td></tr>
+                    </table>
+
+                    <div class="info-box">
+                        <div class="info-box-title">CHARACTERISTIC (세부 특징)</div>
+                        <div class="info-desc" id="dt-traits">세부 특징 설명이 여기에 들어갑니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const characters = [
+            { id: 1, name: "백윤하", age: "18세", height: "155cm", mbti: "ISFP", personality: "츤데레, 앙칼짐, 솔직하지 못함", traits: "선천적 허약체질로 장기 입원 생활을 했다. 상처받는 것이 두려워 방어기제로 남을 밀어내지만 내심 외로움을 많이 타고 친구를 간절히 원한다.", thumb: "https://i.imgur.com/KLELUX0.png", sprite: "https://i.imgur.com/hEjkgmA.png" },
+            { id: 2, name: "윤서아", age: "17세", height: "158cm", mbti: "ISFJ", personality: "다정함, 강한 책임감, 마망 포지션", traits: "윤서우의 여동생. 얌전한 순둥이로 극한의 상황 속에서도 타인의 안위를 먼저 묻고 챙기는 이타적인 성격을 지녔다.", thumb: "https://i.imgur.com/fD92Q1b.png", sprite: "https://i.imgur.com/fPAWuCL.png" },
+            { id: 3, name: "송보람", age: "19세", height: "161cm", mbti: "INFP", personality: "극소심, 덜렁이, 자기비하", traits: "타인의 시선을 두려워하며 남의 발목을 잡을까 봐 전전긍긍한다. 자주 울먹이고 겁이 많지만 내면에는 작은 용기가 숨어있다.", thumb: "https://i.imgur.com/38Mj28k.png", sprite: "https://i.imgur.com/fVQ5Y62.png" },
+            { id: 4, name: "차도연", age: "18세", height: "165cm", mbti: "ISTJ", personality: "무덤덤함, 이성적, 효율성 중시", traits: "감정을 배제하고 건조한 톤으로 팩트 폭력을 날리는 브레인. 싸가지가 없는 것이 아니라 생존 효율에 집중할 뿐이며, 훌륭한 추리로 모두를 돕는다.", thumb: "https://i.imgur.com/ELaBMwh.png", sprite: "https://i.imgur.com/9JcVUgW.png" },
+            { id: 5, name: "윤서우", age: "19세", height: "183cm", mbti: "ISTJ", personality: "원칙주의, 완벽주의, 통제광", traits: "윤서아의 오빠. 겉으로는 든든한 리더를 자처하며 정중하지만, 실제로는 교묘하게 위험을 조장한 뒤 구해주는 방식을 즐기는 속을 알 수 없는 인물.", thumb: "https://i.imgur.com/ktM9ZSM.png", sprite: "https://i.imgur.com/r9ljdI1.png" },
+            { id: 6, name: "류도진", age: "19세", height: "185cm", mbti: "ESTJ", personality: "가학성, 지배욕, 능글맞음", traits: "여유롭고 날카로운 화법을 구사한다. 부유층 자제로, 타인을 조종하는 것을 유흥으로 삼으며, 이 극한 환경을 억눌린 지배욕을 해방할 놀이터로 여긴다.", thumb: "https://i.imgur.com/cdGM856.png", sprite: "https://i.imgur.com/QdO95ZR.png" },
+            { id: 7, name: "강혁", age: "17세", height: "181cm", mbti: "INTP", personality: "쑥맥, 무신경, 마이페이스", traits: "남의 일에 무관심하고 느릿하게 행동하지만, 기계나 퍼즐에 천부적인 재능이 있다. 먼저 다가오면 당황해 귓바퀴가 붉어지는 은근한 갭모에가 있다. 밴드맨(베이스 담당).", thumb: "https://i.imgur.com/HW3Evn0.png", sprite: "https://i.imgur.com/UxLHNIE.png" },
+            { id: 8, name: "채한결", age: "18세", height: "178cm", mbti: "ESFJ", personality: "눈치백단, 외유내강, 분위기 메이커", traits: "상황 파악이 빠르고 친화력이 높다. 공포로 인한 집단 붕괴를 막기 위해 의도적으로 여유를 부리며 모두의 버팀목을 자처하는 성숙하고 예리한 쾌남.", thumb: "https://i.imgur.com/hag8WZr.png", sprite: "https://i.imgur.com/tRsyy6e.png" }
+        ];
+
+        const grid = document.getElementById('char-grid');
+        characters.forEach(char => {
+            grid.innerHTML += `
+                <div class="folder-wrap" onclick="openDetail(${char.id})">
+                    <div class="folder-tab">FILE.0${char.id}</div>
+                    <div class="folder-body">
+                        <div class="face-thumb" style="background-image: url('${char.thumb}'); background-size: cover; background-position: center;"></div>
+                        <div>
+                            <div class="char-name">${char.name}</div>
+                            <div class="char-status">ALIVE</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        function openTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function openDetail(id) {
+            const char = characters.find(c => c.id === id);
+            if(!char) return; 
+
+            document.getElementById('dt-name').innerText = char.name;
+            document.getElementById('dt-age').innerText = char.age;
+            document.getElementById('dt-height').innerText = char.height;
+            document.getElementById('dt-mbti').innerText = char.mbti;
+            document.getElementById('dt-personality').innerText = char.personality;
+            document.getElementById('dt-traits').innerText = char.traits;
+
+            const spriteDiv = document.getElementById('dt-sprite');
+            spriteDiv.style.backgroundImage = `url('${char.sprite}')`;
+            spriteDiv.style.backgroundSize = 'contain';
+            spriteDiv.style.backgroundRepeat = 'no-repeat';
+            spriteDiv.style.backgroundPosition = 'bottom center';
+
+            document.getElementById('detail-modal').style.display = 'block';
+        }
+
+        function closeDetail() {
+            document.getElementById('detail-modal').style.display = 'none';
+        }
+
+        window.onload = () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loading-screen');
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
+            }, 2100);
+        };
+    </script>
+</body>
+</html>
